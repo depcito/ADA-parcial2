@@ -33,22 +33,213 @@ ArbolBPlus::ArbolBPlus(int _grado, string _nombre_archivo) : raiz(nullptr), grad
 // =========================================================================
 
 void ArbolBPlus::insertar(int clave, string datos) {
-    // [A IMPLEMENTAR EN EL PARCIAL]:
-    // Lógica requerida:
-    // 1. Si el árbol está vacío (raiz == nullptr), crear el primer nodo hoja.
-    // 2. Si no está vacío, recorrer el árbol desde la raíz bajando por los hijos 
-    //    correctos comparando la clave, hasta llegar a una hoja.
-    // 3. Insertar el 'Registro' en el vector de registros de la hoja, MANTENIENDO EL ORDEN.
-    // 4. Verificar condición de llenado: Si la hoja ahora tiene más elementos que el grado 
-    //    (se desbordó), se debe dividir (SPLIT).
-    // 5. El Split implica:
-    //    a) Crear una nueva hoja.
-    //    b) Pasar la mitad de los registros a la nueva hoja.
-    //    c) Promover la clave media hacia el nodo PADRE.
-    //    d) Configurar el puntero "siguiente_hoja" para mantener la lista enlazada unida.
-    // 6. Esta propagación puede subir recursivamente hasta la raíz, obligando a crear una nueva raíz si es necesario.
+
+     // CASO 1: EL ÁRBOL ESTÁ VACÍO
+  
+    if (raiz == nullptr) {
+
+        raiz = new NodoBPlus(true);
+
+        Registro nuevo;
+        nuevo.clave = clave;
+        nuevo.datos = datos;
+
+        raiz->claves.push_back(clave);
+        raiz->registros.push_back(nuevo);
+
+        cout << "[Arbol B+] Clave " << clave
+             << " insertada correctamente.\n";
+
+        return;
+    }
+
+
     
-    cout << "[Arbol B+] Insertando clave " << clave << " con dato: " << datos << " (NO IMPLEMENTADO)\n";
+    // CASO 2: BUSCAR LA HOJA CORRECTA
+    
+    NodoBPlus* cursor = raiz;
+
+    while (!cursor->es_hoja) {
+
+        int i = 0;
+
+        while (i < cursor->claves.size() &&
+               clave >= cursor->claves[i]) {
+            i++;
+        }
+
+        cursor = cursor->hijos[i];
+    }
+
+    // VERIFICAR QUE LA CLAVE NO EXISTA
+
+    for (const Registro& r : cursor->registros) {
+
+        if (r.clave == clave) {
+
+            cout << "Error: la clave "
+                 << clave
+                 << " ya existe.\n";
+
+            return;
+        }
+    }
+
+
+    // CREAR EL NUEVO REGISTRO
+
+    Registro nuevo;
+
+    nuevo.clave = clave;
+    nuevo.datos = datos;
+
+
+    // ENCONTRAR LA POSICIÓN CORRECTA
+
+    int posicion = 0;
+
+    while (posicion < cursor->claves.size() &&
+           cursor->claves[posicion] < clave) {
+
+        posicion++;
+    }
+
+
+    // INSERTAR ORDENADAMENTE
+
+    cursor->claves.insert(
+        cursor->claves.begin() + posicion,
+        clave
+    );
+
+    cursor->registros.insert(
+        cursor->registros.begin() + posicion,
+        nuevo
+    );
+
+
+    // SI NO HAY DESBORDAMIENTO, TERMINAMOS
+
+    if (cursor->claves.size() <= grado) {
+
+        cout << "[Arbol B+] Clave "
+             << clave
+             << " insertada correctamente.\n";
+
+        return;
+    }
+
+    // SPLIT DE LA HOJA
+
+    NodoBPlus* nuevaHoja = new NodoBPlus(true);
+
+    int mitad = cursor->claves.size() / 2;
+
+
+    // Pasamos la mitad derecha de las claves
+    // y registros a la nueva hoja.
+
+    for (int i = mitad;
+         i < cursor->claves.size();
+         i++) {
+
+        nuevaHoja->claves.push_back(
+            cursor->claves[i]
+        );
+
+        nuevaHoja->registros.push_back(
+            cursor->registros[i]
+        );
+    }
+
+
+    // BORRAR DE LA HOJA ORIGINAL LOS ELEMENTOS MOVIDOS
+
+    cursor->claves.erase(
+        cursor->claves.begin() + mitad,
+        cursor->claves.end()
+    );
+
+    cursor->registros.erase(
+        cursor->registros.begin() + mitad,
+        cursor->registros.end()
+    );
+
+
+    // CONECTAR LAS HOJAS
+
+    nuevaHoja->siguiente_hoja =
+        cursor->siguiente_hoja;
+
+    cursor->siguiente_hoja =
+        nuevaHoja;
+
+
+    // CLAVE QUE SE PROMUEVE AL PADRE
+
+    int clavePromovida =
+        nuevaHoja->claves[0];
+
+
+    // CASO 3: LA HOJA DIVIDIDA ERA LA RAÍZ
+    if (cursor == raiz) {
+
+        NodoBPlus* nuevaRaiz =
+            new NodoBPlus(false);
+
+        nuevaRaiz->claves.push_back(
+            clavePromovida
+        );
+
+        nuevaRaiz->hijos.push_back(
+            cursor
+        );
+
+        nuevaRaiz->hijos.push_back(
+            nuevaHoja
+        );
+
+        raiz = nuevaRaiz;
+
+
+        cout << "[Arbol B+] Split realizado. "
+             << "Se creó una nueva raíz con clave "
+             << clavePromovida
+             << ".\n";
+
+        return;
+    }
+
+
+    // CASO 4: LA HOJA TIENE PADRE
+
+    NodoBPlus* padre =
+        buscarPadre(raiz, cursor);
+
+
+    if (padre == nullptr) {
+
+        cout << "Error: no se encontró el padre "
+             << "del nodo durante el split.\n";
+
+        return;
+    }
+
+
+    // Insertamos la clave promovida en el padre.
+    // Esta función también deberá encargarse de hacer
+    // split del nodo interno si el padre se desborda.
+
+    insertarInterno(
+        clavePromovida,
+        padre,
+        nuevaHoja
+    );
+
+
+    cout << "[Arbol B+] Clave "
+         << clave
+         << " insertada correctamente.\n";
 }
 
 string ArbolBPlus::buscar(int clave) {
