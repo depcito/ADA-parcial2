@@ -3,7 +3,7 @@
 ## Participantes
 
 - **Emanuel Ossa**
-- **Samuel Hernando Echeverry**
+- **Samuel Hernando Echeverri Castrillón**
 - **Sebastian Gudiño**
 - **Jeronimo Machado**
 
