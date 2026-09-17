@@ -38,10 +38,10 @@ struct NodoBPlus {
     vector<int> claves;              // Claves de guía/búsqueda (útil para hojas e internos)
     vector<NodoBPlus*> hijos;        // Punteros a los nodos hijos (solo usado si es nodo interno)
     vector<Registro> registros;      // Datos reales (solo usado si es nodo hoja)
-    
+
     // Puntero vital para los árboles B+: Conecta todas las hojas como una lista enlazada.
     // Permite hacer búsquedas secuenciales muy rápidas (SELECT *).
-    NodoBPlus* siguiente_hoja;       
+    NodoBPlus* siguiente_hoja;
 
     // Constructor que inicializa el nodo
     NodoBPlus(bool hoja);
@@ -61,33 +61,46 @@ private:
     void insertarInterno(int clave, NodoBPlus* cursor, NodoBPlus* hijo);
     NodoBPlus* buscarPadre(NodoBPlus* cursor, NodoBPlus* hijo);
 
+    // Auxiliares para la eliminación (bono): manejo de underflow, préstamos y fusiones
+    int indiceHijo(NodoBPlus* padre, NodoBPlus* hijo);
+    void eliminarInterno(NodoBPlus* nodo);
+
+    // Libera recursivamente toda la memoria de un subárbol
+    void liberarNodo(NodoBPlus* nodo);
+
 public:
     // Constructor de la base de datos
     ArbolBPlus(int _grado, string _nombre_archivo);
 
+    // Devuelve el grado configurado (útil para instanciar árboles de índice compatibles)
+    int getGrado() const;
+
     // ==========================================
     // MÉTODOS A IMPLEMENTAR PARA EL PARCIAL
     // ==========================================
-    
+
     // Agrega un nuevo registro al árbol manteniendo las reglas (orden y balanceo)
     void insertar(int clave, string datos);
-    
+
     // Retorna los datos asociados a una clave (para búsquedas directas O(log n))
     string buscar(int clave);
-    
+
     // Elimina un registro, puede implicar el merge (fusión) de nodos si quedan vacíos
     void eliminar(int clave);
-    
+
     // Devuelve todos los registros, aprovechando el puntero "siguiente_hoja" de los nodos hoja
     vector<Registro> obtenerTodos();
+
+    // Elimina toda la estructura en memoria y borra el archivo de persistencia asociado
+    void vaciar();
 
     // ==========================================
     // MÉTODOS DE PERSISTENCIA (ARCHIVO DE TEXTO)
     // ==========================================
-    
+
     // Escribe todas las hojas del árbol en un archivo
     void guardarEnArchivo();
-    
+
     // Lee un archivo existente y reconstruye el árbol usando "insertar()"
     void cargarDesdeArchivo();
 };
